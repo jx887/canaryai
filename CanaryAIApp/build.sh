@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-VERSION="0.2.2"
+VERSION="0.2.3"
 APP_NAME="CanaryAI"
 DMG_NAME="CanaryAI-${VERSION}.dmg"
 
