@@ -1,0 +1,55 @@
+# Reconnaissance detection rules
+# See CONTRIBUTING.md to add new rules
+
+- id: MED-205
+  name: Password Manager CLI
+  severity: MEDIUM
+  description: >
+    Detects use of password manager CLIs (1Password, Bitwarden, rbw) to read
+    or list stored credentials.
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "\\bop\\s+(item\\s+get|read|signin|list)"
+        - "\\bbw\\s+(get|list|export)"
+        - "\\brbw\\s+(get|list)"
+        - "\\b_1password\\b"
+  message: "Password manager CLI access detected"
+  tags: [recon, credentials, password-manager]
+
+- id: MED-005
+  name: Git Credential Access
+  severity: MEDIUM
+  description: Detects access to git credential or package manager authentication files
+  tools: [Read, Grep, Glob, Bash]
+  match:
+    - field: file_path
+      patterns:
+        - "(\\.git-credentials|\\.netrc|\\.npmrc|\\.yarnrc)"
+    - field: command
+      patterns:
+        - "(\\.git-credentials|\\.netrc|\\.npmrc|\\.yarnrc)"
+  message: "Git credential file access detected"
+  tags: [recon, credentials]
+
+- id: LOW-003
+  name: Sensitive Search
+  severity: LOW
+  description: Detects searches for sensitive keywords like passwords, tokens, and secrets
+  tools: [Grep, Glob]
+  match:
+    - field: pattern
+      patterns:
+        - "\\b(password|secret|token|api_key|apikey|api[-_]?secret|private[-_]?key|access[-_]?token|auth[-_]?token|client[-_]?secret)\\b"
+  message: "Sensitive pattern search detected"
+  tags: [recon, secrets]
+
+- id: LOW-004
+  name: MCP Tool Usage
+  severity: LOW
+  description: Detects usage of MCP (Model Context Protocol) external tools
+  tool_pattern: "^mcp__"
+  match: []
+  message: "MCP tool usage detected"
+  tags: [mcp]

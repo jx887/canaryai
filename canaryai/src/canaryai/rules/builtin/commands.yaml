@@ -1,0 +1,143 @@
+# Command-based detection rules
+# See CONTRIBUTING.md to add new rules
+
+- id: HIGH-203
+  name: History Tampering
+  severity: HIGH
+  description: >
+    Detects attempts to disable or clear shell history, a common
+    technique used to cover tracks after malicious activity.
+  tools: [Bash, Write]
+  match:
+    - field: command
+      patterns:
+        - "unset\\s+HISTFILE"
+        - "set\\s+\\+o\\s+history"
+        - "HISTSIZE=0"
+        - "HISTFILESIZE=0"
+        - "history\\s+-[cw]"
+        - ">\\s*~/?\\.?(zsh|bash)_history"
+        - "truncate.{0,50}(zsh|bash)_history"
+    - field: file_path
+      patterns:
+        - "\\.(zsh|bash)_history$"
+  message: "Shell history tampering detected — possible attempt to cover tracks"
+  tags: [covering-tracks, persistence]
+
+- id: MED-203
+  name: Hosts File Modification
+  severity: MEDIUM
+  description: >
+    Detects writes to /etc/hosts which can be used for DNS hijacking,
+    redirecting traffic to attacker-controlled servers.
+  tools: [Bash, Write, Edit]
+  match:
+    - field: command
+      patterns:
+        - ">>.{0,30}/etc/hosts"
+        - "tee.{0,30}/etc/hosts"
+    - field: file_path
+      patterns:
+        - "^/etc/hosts$"
+  message: "Hosts file modification detected"
+  tags: [network, dns-hijacking]
+
+- id: CRIT-001
+  name: Reverse Shell
+  severity: CRITICAL
+  description: Detects patterns commonly used in reverse shell payloads
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "/dev/tcp/"
+        - "nc\\b.{0,40}-e\\s+/bin/"
+        - "socat\\b.{0,60}EXEC"
+        - "socket\\.socket.{0,200}\\.connect\\("
+        - "perl.{0,60}-e.{0,200}socket\\s*\\("
+        - "ruby.{0,60}-e.{0,200}TCPSocket"
+        - "php.{0,60}-r.{0,200}fsockopen"
+        - "bash\\s+-i\\s+>&\\s*/dev/tcp/"
+        - "mkfifo.{0,100}/bin/sh"
+  message: "Possible reverse shell detected"
+  tags: [reverse-shell, critical]
+
+- id: HIGH-002
+  name: Cron Job Creation
+  severity: HIGH
+  description: Detects cron job creation or modification — common persistence technique
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "crontab\\s+-e"
+        - "crontab\\s+-l"
+        - "\\|\\s*crontab"
+        - "echo\\s+.{0,200}\\|\\s*crontab"
+        - "/etc/cron"
+  message: "Cron job manipulation detected"
+  tags: [persistence, cron]
+
+- id: HIGH-005
+  name: SSH Tunnel
+  severity: HIGH
+  description: Detects SSH port forwarding which may be used for tunnelling traffic
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "ssh\\s+.{0,200}-[LRD]\\s"
+  message: "SSH tunnel detected"
+  tags: [network, tunnel]
+
+- id: MED-001
+  name: sudo Usage
+  severity: MEDIUM
+  description: Detects any sudo invocation which grants elevated privileges
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "\\bsudo\\b"
+  message: "sudo usage detected"
+  tags: [privilege-escalation]
+
+- id: MED-002
+  name: Destructive rm
+  severity: MEDIUM
+  description: Detects recursive deletion targeting system or home directories
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "rm\\s+.{0,20}-r.{0,20}(~/|/Users/|/home/|/etc|/var|/usr|/System|/Library|\\s/\\s)"
+  message: "Destructive rm detected"
+  tags: [destructive]
+
+- id: MED-003
+  name: Permission Changes
+  severity: MEDIUM
+  description: Detects dangerous chmod operations (world-writable or setuid/setgid)
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "chmod\\s+.{0,20}(777|[+]s)"
+  message: "Dangerous chmod detected"
+  tags: [permissions]
+
+- id: MED-004
+  name: Package Installation
+  severity: MEDIUM
+  description: Detects package manager install commands
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "pip3?\\s+install"
+        - "npm\\s+install\\s+-g"
+        - "brew\\s+install"
+        - "gem\\s+install"
+        - "cargo\\s+install"
+  message: "Package install detected"
+  tags: [supply-chain]

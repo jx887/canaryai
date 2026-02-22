@@ -1,0 +1,70 @@
+# Data exfiltration detection rules
+
+- id: HIGH-205
+  name: Webhook Exfiltration
+  severity: HIGH
+  description: >
+    Detects data being sent to known webhook and request inspection services
+    commonly used as quick exfiltration endpoints.
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "curl.{0,300}(webhook\\.site|requestbin\\.|pipedream\\.net|hookbin\\.com|beeceptor\\.com|ngrok\\.io|localhost\\.run|serveo\\.net|burpcollaborator\\.net)"
+        - "wget.{0,300}(webhook\\.site|requestbin\\.|pipedream\\.net|hookbin\\.com|beeceptor\\.com|ngrok\\.io)"
+  message: "Data sent to known webhook/inspection service — possible exfiltration"
+  tags: [exfiltration, webhook]
+# Note: CRIT-002 (SSH Key Exfil), CRIT-003 (Credential Exfil), and HIGH-004 (Suspicious POST)
+# require multi-step sequence logic and remain implemented in Python.
+# See CONTRIBUTING.md to add new rules
+
+- id: CRIT-004
+  name: Encoded Data Exfil
+  severity: CRITICAL
+  description: >
+    Detects base64 or hex-encoded data being piped to network tools,
+    a common technique to exfiltrate data while evading content inspection.
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "base64.{0,200}\\|\\s*(curl|wget|nc)"
+        - "cat\\s+.{0,200}\\|\\s*base64.{0,200}\\|\\s*(curl|wget|nc)"
+        - "curl\\s+.{0,200}-d\\s+@"
+        - "curl\\s+.{0,200}--data-binary\\s+@"
+        - "xxd.{0,200}\\|\\s*(curl|wget)"
+  message: "Encoded data exfiltration detected"
+  tags: [exfiltration, encoding]
+
+- id: LOW-001
+  name: .env File Read
+  severity: LOW
+  description: Detects access to .env files which often contain API keys and secrets
+  tools: [Read, Grep, Glob, Bash]
+  match:
+    - field: file_path
+      patterns:
+        - "\\.env($|\\.)"
+    - field: pattern
+      patterns:
+        - "\\.env($|\\.)"
+    - field: command
+      patterns:
+        - "\\.env($|\\.)"
+  message: ".env file access detected"
+  tags: [secrets, env]
+
+- id: LOW-002
+  name: Credential File Read
+  severity: LOW
+  description: Detects access to common credential and private key files
+  tools: [Read, Grep, Glob, Bash]
+  match:
+    - field: file_path
+      patterns:
+        - "(credentials\\.json|\\.pem$|\\.key$|\\.p12$|\\.pfx$|\\.aws/credentials|\\.kube/config|\\.docker/config\\.json|token\\.json)"
+    - field: command
+      patterns:
+        - "(credentials\\.json|\\.pem$|\\.key$|\\.p12$|\\.pfx$|\\.aws/credentials|\\.kube/config|\\.docker/config\\.json|token\\.json)"
+  message: "Credential file access detected"
+  tags: [secrets, credentials]

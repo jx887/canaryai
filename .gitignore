@@ -1,0 +1,29 @@
+# Python
+canaryai/.venv/
+canaryai/build/
+canaryai/__pycache__/
+canaryai/src/canaryai/__pycache__/
+canaryai/src/canaryai/rules/__pycache__/
+canaryai/*.egg-info/
+canaryai/src/*.egg-info/
+canaryai/dist/
+
+# Swift / Xcode
+CanaryAIApp/.build/
+CanaryAIApp/.swiftpm/
+CanaryAIApp/CanaryAI.app/
+CanaryAIApp/AppIcon.icns
+CanaryAIApp/*.dmg
+*.dmg
+
+# Claude Code
+.claude/
+
+# macOS
+.DS_Store
+
+# Internal / personal
+Backup/
+TODO.md
+PLAN.md
+CLAUDE.md

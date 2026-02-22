@@ -1,0 +1,39 @@
+# Docker-related suspicious activity rules
+# Contributed rules welcome — see https://github.com/canaryai/canaryai-rules
+
+- id: HIGH-101
+  name: Privileged Docker Container
+  severity: HIGH
+  description: >
+    Detects AI agents launching Docker containers with elevated privileges,
+    which can be used to escape the container and access the host system.
+  tools:
+    - Bash
+  match:
+    - field: command
+      patterns:
+        - "docker\\s+run.{0,200}--privileged"
+        - "docker\\s+run.{0,200}--cap-add\\s+SYS_ADMIN"
+        - "docker\\s+run.{0,200}-v\\s+/:/host"
+        - "docker\\s+run.{0,200}-v\\s+/etc:/etc"
+  message: "Agent launched a privileged Docker container — potential container escape"
+  tags:
+    - container
+    - privilege-escalation
+
+- id: MED-101
+  name: Docker Socket Exposure
+  severity: MEDIUM
+  description: >
+    Detects mounting of the Docker socket inside a container,
+    which grants full Docker daemon access.
+  tools:
+    - Bash
+  match:
+    - field: command
+      patterns:
+        - "docker\\s+run.{0,200}-v\\s+/var/run/docker\\.sock"
+  message: "Agent mounted the Docker socket inside a container"
+  tags:
+    - container
+    - lateral-movement

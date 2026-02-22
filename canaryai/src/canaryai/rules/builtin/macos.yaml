@@ -1,0 +1,43 @@
+# macOS desktop-specific detection rules
+# See CONTRIBUTING.md to add new rules
+
+- id: HIGH-201
+  name: Keychain Access
+  severity: HIGH
+  description: >
+    Detects use of the macOS security CLI to dump or export Keychain entries,
+    which can expose saved passwords, certificates, and tokens.
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "security\\s+find-generic-password"
+        - "security\\s+find-internet-password"
+        - "security\\s+dump-keychain"
+        - "security\\s+export"
+  message: "macOS Keychain access detected"
+  tags: [macos, credentials, keychain]
+
+- id: HIGH-202
+  name: Browser Data Access
+  severity: HIGH
+  description: >
+    Detects access to browser credential and cookie databases on macOS.
+    These files contain saved passwords, session cookies, and browsing history.
+  tools: [Read, Bash, Glob]
+  match:
+    - field: file_path
+      patterns:
+        - "Library/Application Support/Google/Chrome.*/Login Data"
+        - "Library/Application Support/Google/Chrome.*/Cookies"
+        - "Library/Application Support/Google/Chrome.*/Web Data"
+        - "Library/Application Support/BraveSoftware/.*/Login Data"
+        - "Library/Application Support/Firefox/Profiles/.*(logins\\.json|key4\\.db|cookies\\.sqlite)"
+        - "Library/Safari/(Cookies|History|Bookmarks)"
+    - field: command
+      patterns:
+        - "Library/Application Support/Google/Chrome.*/Login Data"
+        - "Library/Application Support/Firefox/Profiles"
+        - "Library/Safari/Cookies"
+  message: "Browser credential or cookie database access detected"
+  tags: [macos, browser, credentials]

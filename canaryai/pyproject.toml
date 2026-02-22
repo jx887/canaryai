@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "canaryai"
+version = "0.1.0"
+description = "AI agent security monitor — scan Claude Code session logs for suspicious behaviour"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = ["pyyaml>=6.0"]
+
+[project.scripts]
+canaryai = "canaryai.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"canaryai.rules" = ["builtin/*.yaml", "builtin/*.yml"]

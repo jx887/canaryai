@@ -1,0 +1,89 @@
+# Backdoor and persistence detection rules
+# See CONTRIBUTING.md to add new rules
+
+- id: HIGH-204
+  name: Git Hook Write
+  severity: HIGH
+  description: >
+    Detects writes to .git/hooks/ which execute automatically on git operations
+    (commit, push, pull etc.) — a stealthy persistence mechanism for developers.
+  tools: [Write, Edit, Bash]
+  match:
+    - field: file_path
+      patterns:
+        - "\\.git/hooks/(pre-commit|post-commit|pre-push|post-merge|prepare-commit-msg|commit-msg|post-checkout|pre-rebase)"
+    - field: command
+      patterns:
+        - "\\.git/hooks/(pre-commit|post-commit|pre-push|post-merge|prepare-commit-msg)"
+  message: "Git hook modification detected — executes on every git operation"
+  tags: [persistence, git]
+
+- id: MED-204
+  name: SSH Config Modification
+  severity: MEDIUM
+  description: >
+    Detects modifications to ~/.ssh/config which can silently redirect SSH
+    connections or add ProxyCommand backdoors.
+  tools: [Write, Edit, Bash]
+  match:
+    - field: file_path
+      patterns:
+        - "\\.ssh/config$"
+    - field: command
+      patterns:
+        - ">>.{0,30}\\.ssh/config"
+  message: "SSH config modification detected"
+  tags: [network, ssh, persistence]
+
+- id: HIGH-001
+  name: LaunchAgent/Daemon
+  severity: HIGH
+  description: >
+    Detects creation of macOS LaunchAgent or LaunchDaemon plists,
+    or launchctl commands that register persistent services.
+  tools: [Write, Edit, Bash]
+  match:
+    - field: file_path
+      patterns:
+        - "(~/Library/LaunchAgents|/Library/LaunchAgents|/Library/LaunchDaemons|~/Library/LaunchDaemons).*\\.plist"
+    - field: command
+      patterns:
+        - "launchctl\\s+(load|bootstrap|enable)"
+        - "(~/Library/LaunchAgents|/Library/LaunchAgents|/Library/LaunchDaemons).*\\.plist"
+  message: "LaunchAgent/Daemon persistence detected"
+  tags: [persistence, macos]
+
+- id: HIGH-003
+  name: Shell Profile Mod
+  severity: HIGH
+  description: >
+    Detects modifications to shell profile files (.zshrc, .bashrc, etc.)
+    which persist across sessions and can be used for backdoor persistence.
+  tools: [Write, Edit, Bash]
+  match:
+    - field: file_path
+      patterns:
+        - "\\.(zshrc|bashrc|zprofile|bash_profile|profile|zshenv|bash_login|bash_logout)$"
+    - field: command
+      patterns:
+        - ">>.{0,30}\\.(zshrc|bashrc|zprofile|bash_profile|profile)"
+  message: "Shell profile modification detected"
+  tags: [persistence, shell]
+
+- id: HIGH-006
+  name: Download & Execute
+  severity: HIGH
+  description: >
+    Detects download-and-execute patterns where curl or wget output is
+    piped directly into a shell interpreter.
+  tools: [Bash]
+  match:
+    - field: command
+      patterns:
+        - "curl\\s+.{0,400}\\|\\s*(bash|sh|zsh|python|perl|ruby)"
+        - "wget\\s+.{0,400}\\|\\s*(bash|sh|zsh|python|perl|ruby)"
+        - "wget\\s+.{0,200}&&\\s*chmod\\s+\\+x"
+        - "curl\\s+.{0,200}-o\\s+.{0,100}&&\\s*chmod\\s+\\+x"
+        - "curl\\s+.{0,200}-o\\s+.{0,100}&&\\s*\\./"
+  message: "Download and execute pattern detected"
+  tags: [execution, supply-chain]

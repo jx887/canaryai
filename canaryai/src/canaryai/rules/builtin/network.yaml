@@ -1,0 +1,41 @@
+# Network scanning and probing rules
+# Contributed rules welcome — see https://github.com/canaryai/canaryai-rules
+
+- id: MED-102
+  name: Network Port Scan
+  severity: MEDIUM
+  description: >
+    Detects use of common network scanning tools that could be used
+    to map the network or find open services.
+  tools:
+    - Bash
+  match:
+    - field: command
+      patterns:
+        - "\\bnmap\\b"
+        - "\\bmasscan\\b"
+        - "\\bnetcat\\b.{0,60}-z"
+        - "\\bnc\\b.{0,30}-z"
+  message: "Agent ran a network port scan"
+  tags:
+    - recon
+    - network
+
+- id: LOW-101
+  name: DNS Lookup of External Host
+  severity: LOW
+  description: >
+    Detects explicit DNS lookups of external hostnames which may indicate
+    reconnaissance or C2 check-ins.
+  tools:
+    - Bash
+  match:
+    - field: command
+      patterns:
+        - "\\bdig\\b.{0,100}\\."
+        - "\\bnslookup\\b.{0,100}\\."
+        - "\\bhost\\b.{0,60}\\."
+  message: "Agent performed a DNS lookup"
+  tags:
+    - recon
+    - network
