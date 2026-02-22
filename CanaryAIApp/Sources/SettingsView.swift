@@ -181,7 +181,7 @@ struct SettingsView: View {
 
             SettingsRow(label: "Version") {
                 HStack(spacing: 8) {
-                    Text("0.2.4").foregroundStyle(.secondary)
+                    Text("0.2.5").foregroundStyle(.secondary)
                     if let newVersion = scanner.updateAvailable {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
