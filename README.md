@@ -261,7 +261,7 @@ Support for additional agents is planned. PRs welcome.
 
 ## Privacy
 
-CanaryAI runs entirely on your machine with no analytics or telemetry. The only network call it makes is polling the GitHub releases API every 60 seconds to check for a newer version.
+CanaryAI runs entirely on your machine with no analytics or telemetry. The only network call it makes is polling the GitHub releases API every 30 minutes to check for a newer version.
 
 ---
 
