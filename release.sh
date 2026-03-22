@@ -97,11 +97,11 @@ else
     echo "Warning: Cask file not found at ${CASK_FILE}"
 fi
 
-# Update Formula
+# Update Formula (careful: two sha256 lines — only replace the tarball one, not PyYAML's)
 FORMULA_FILE="${TAP_DIR}/Formula/canaryai.rb"
 if [ -f "${FORMULA_FILE}" ]; then
     sed -i '' "s|refs/tags/v[0-9]*\.[0-9]*\.[0-9]*.tar.gz|refs/tags/${TAG}.tar.gz|" "${FORMULA_FILE}"
-    sed -i '' "s/sha256 \"[a-f0-9]*\"/sha256 \"${TARBALL_SHA}\"/" "${FORMULA_FILE}"
+    awk -v new_sha="${TARBALL_SHA}" 'BEGIN{done=0} /sha256/ && !done {sub(/sha256 "[a-f0-9]+"/, "sha256 \"" new_sha "\""); done=1} {print}' "${FORMULA_FILE}" > "${FORMULA_FILE}.tmp" && mv "${FORMULA_FILE}.tmp" "${FORMULA_FILE}"
 else
     echo "Warning: Formula file not found at ${FORMULA_FILE}"
 fi
