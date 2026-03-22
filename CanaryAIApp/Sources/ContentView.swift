@@ -286,7 +286,7 @@ private struct NotConfiguredView: View {
                 .controlSize(.small)
 
                 Button("Install Instructions") {
-                    NSWorkspace.shared.open(URL(string: "https://github.com/jx887/homebrew-canaryai")!)
+                    NSWorkspace.shared.open(URL(string: "https://github.com/jx887/canaryai")!)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)

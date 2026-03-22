@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="jx887/homebrew-canaryai"
-VERSION="${1:-0.1.0}"
+# Deploy a new CanaryAI release (two-repo pattern):
+# 1. Bumps version in build.sh
+# 2. Builds the DMG
+# 3. Creates a GitHub release on jx887/canaryai with the DMG
+# 4. Updates the Homebrew tap (jx887/homebrew-canaryai) with new version + checksums
+
+APP_REPO="jx887/canaryai"
+TAP_REPO="jx887/homebrew-canaryai"
+VERSION="${1:?Usage: ./release.sh 0.x.x}"
 TAG="v${VERSION}"
 DMG="CanaryAI-${VERSION}.dmg"
 
@@ -22,23 +29,19 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
     exit 1
 fi
 
-# Check repo is public (brew tap won't work on private repos)
-VISIBILITY=$(gh repo view "${REPO}" --json visibility --jq '.visibility' 2>/dev/null || echo "unknown")
+# Check app repo is public
+VISIBILITY=$(gh repo view "${APP_REPO}" --json visibility --jq '.visibility' 2>/dev/null || echo "unknown")
 if [ "${VISIBILITY}" != "PUBLIC" ]; then
-    echo "Error: repo is ${VISIBILITY} — make it public first:"
-    echo "  gh repo edit ${REPO} --visibility public"
+    echo "Error: repo ${APP_REPO} is ${VISIBILITY} — make it public first:"
+    echo "  gh repo edit ${APP_REPO} --visibility public"
     exit 1
 fi
 
-# --- Bump version in all files ---
+# --- Bump version in build.sh ---
 echo "==> Bumping version to ${VERSION}..."
 sed -i '' "s/^VERSION=.*/VERSION=\"${VERSION}\"/" CanaryAIApp/build.sh
-sed -i '' "s/version \"[0-9]*\.[0-9]*\.[0-9]*\"/version \"${VERSION}\"/" Casks/canaryai.rb
-sed -i '' "s|refs/tags/v[0-9]*\.[0-9]*\.[0-9]*.tar.gz|refs/tags/${TAG}.tar.gz|" Formula/canaryai.rb
-sed -i '' "s/sha256 \"[a-f0-9]\{64\}\"/sha256 \"FILL_IN_AFTER_RELEASE\"/" Casks/canaryai.rb
-sed -i '' "s/sha256 \"[a-f0-9]\{64\}\"/sha256 \"FILL_IN_AFTER_RELEASE\"/" Formula/canaryai.rb
 
-git add CanaryAIApp/build.sh Casks/canaryai.rb Formula/canaryai.rb
+git add CanaryAIApp/build.sh
 git diff --cached --quiet || git commit -m "Bump version to ${VERSION}"
 git push
 
@@ -51,10 +54,10 @@ echo "==> Tagging ${TAG}..."
 git tag "${TAG}"
 git push origin "${TAG}"
 
-# --- Create GitHub release and upload DMG ---
-echo "==> Creating GitHub release..."
+# --- Create GitHub release on the app repo and upload DMG ---
+echo "==> Creating GitHub release on ${APP_REPO}..."
 gh release create "${TAG}" \
-    --repo "${REPO}" \
+    --repo "${APP_REPO}" \
     --title "CanaryAI ${VERSION}" \
     --notes "## Install
 
@@ -72,19 +75,48 @@ echo "==> Computing SHA256 checksums..."
 DMG_SHA=$(shasum -a 256 "CanaryAIApp/${DMG}" | awk '{print $1}')
 echo "  DMG:     ${DMG_SHA}"
 
-TARBALL_SHA=$(gh api "repos/${REPO}/tarball/${TAG}" | shasum -a 256 | awk '{print $1}')
+TARBALL_SHA=$(gh api "repos/${APP_REPO}/tarball/${TAG}" | shasum -a 256 | awk '{print $1}')
 echo "  Tarball: ${TARBALL_SHA}"
 
-# --- Update formula files with checksums ---
-echo "==> Updating formula checksums..."
-sed -i '' "s/FILL_IN_AFTER_RELEASE/${DMG_SHA}/" Casks/canaryai.rb
-sed -i '' "s/FILL_IN_AFTER_RELEASE/${TARBALL_SHA}/" Formula/canaryai.rb
-
-# Commit SettingsView.swift (patched by build.sh) + formula checksums
-git add CanaryAIApp/Sources/SettingsView.swift Casks/canaryai.rb Formula/canaryai.rb
-git commit -m "Release ${TAG}: checksums"
+# --- Commit SettingsView.swift (patched by build.sh) ---
+git add CanaryAIApp/Sources/SettingsView.swift
+git diff --cached --quiet || git commit -m "Release ${TAG}: version sync"
 git push
+
+# --- Update Homebrew tap repo ---
+echo "==> Updating Homebrew tap (${TAP_REPO})..."
+TAP_DIR=$(mktemp -d)
+gh repo clone "${TAP_REPO}" "${TAP_DIR}" -- -q
+
+# Update Cask
+CASK_FILE="${TAP_DIR}/Casks/canaryai.rb"
+if [ -f "${CASK_FILE}" ]; then
+    sed -i '' "s/version \"[0-9]*\.[0-9]*\.[0-9]*\"/version \"${VERSION}\"/" "${CASK_FILE}"
+    sed -i '' "s/sha256 \"[a-f0-9]*\"/sha256 \"${DMG_SHA}\"/" "${CASK_FILE}"
+else
+    echo "Warning: Cask file not found at ${CASK_FILE}"
+fi
+
+# Update Formula
+FORMULA_FILE="${TAP_DIR}/Formula/canaryai.rb"
+if [ -f "${FORMULA_FILE}" ]; then
+    sed -i '' "s|refs/tags/v[0-9]*\.[0-9]*\.[0-9]*.tar.gz|refs/tags/${TAG}.tar.gz|" "${FORMULA_FILE}"
+    sed -i '' "s/sha256 \"[a-f0-9]*\"/sha256 \"${TARBALL_SHA}\"/" "${FORMULA_FILE}"
+else
+    echo "Warning: Formula file not found at ${FORMULA_FILE}"
+fi
+
+cd "${TAP_DIR}"
+git add -A
+git diff --cached --quiet || git commit -m "Update to v${VERSION}"
+git push
+cd - >/dev/null
+
+rm -rf "${TAP_DIR}"
 
 echo ""
 echo "==> Done! CanaryAI ${TAG} is live."
-echo "    https://github.com/${REPO}/releases/tag/${TAG}"
+echo "  App:  https://github.com/${APP_REPO}/releases/tag/${TAG}"
+echo "  Tap:  https://github.com/${TAP_REPO}"
+echo ""
+echo "Users can update with: brew update && brew upgrade --cask canaryai"

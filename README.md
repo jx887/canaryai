@@ -47,7 +47,7 @@ Installs the CanaryAI menu bar app and the `canaryai` CLI command. Everything in
 
 ### Option 2 — DMG
 
-Download `CanaryAI.dmg` from [Releases](https://github.com/jx887/homebrew-canaryai/releases), open it, and drag CanaryAI to Applications.
+Download `CanaryAI.dmg` from [Releases](https://github.com/jx887/canaryai/releases), open it, and drag CanaryAI to Applications.
 
 Self-contained — includes the CLI, no other installs needed.
 
@@ -218,7 +218,7 @@ Contributions are welcome — especially new detection rules.
 
 ### Reporting a Bug or False Positive
 
-Open an [issue](https://github.com/jx887/homebrew-canaryai/issues) with:
+Open an [issue](https://github.com/jx887/canaryai/issues) with:
 - The rule ID that fired
 - What the agent was actually doing
 - Your Claude Code version

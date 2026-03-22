@@ -376,7 +376,7 @@ final class ScannerService {
 
     func checkForUpdates() {
         Task.detached(priority: .background) { [weak self] in
-            guard let url = URL(string: "https://api.github.com/repos/jx887/homebrew-canaryai/releases/latest") else { return }
+            guard let url = URL(string: "https://api.github.com/repos/jx887/canaryai/releases/latest") else { return }
             let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
             guard !currentVersion.isEmpty else { return }
 

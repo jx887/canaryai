@@ -212,8 +212,8 @@ struct SettingsView: View {
             Divider().padding(.leading, 16)
 
             SettingsRow(label: "GitHub") {
-                Button("github.com/jx887/homebrew-canaryai") {
-                    NSWorkspace.shared.open(URL(string: "https://github.com/jx887/homebrew-canaryai")!)
+                Button("github.com/jx887/canaryai") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/jx887/canaryai")!)
                 }
                 .buttonStyle(.borderless)
                 .foregroundStyle(.blue)
