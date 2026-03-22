@@ -49,7 +49,12 @@ git push
 echo "==> Building DMG..."
 (cd "$(dirname "$0")/CanaryAIApp" && ./build.sh)
 
-# --- Tag and push ---
+# --- Commit SettingsView.swift (patched by build.sh) BEFORE tagging ---
+git add CanaryAIApp/Sources/SettingsView.swift
+git diff --cached --quiet || git commit -m "Release ${TAG}: version sync"
+git push
+
+# --- Tag and push (tag now includes the version-patched SettingsView) ---
 echo "==> Tagging ${TAG}..."
 git tag "${TAG}"
 git push origin "${TAG}"
@@ -77,11 +82,6 @@ echo "  DMG:     ${DMG_SHA}"
 
 TARBALL_SHA=$(gh api "repos/${APP_REPO}/tarball/${TAG}" | shasum -a 256 | awk '{print $1}')
 echo "  Tarball: ${TARBALL_SHA}"
-
-# --- Commit SettingsView.swift (patched by build.sh) ---
-git add CanaryAIApp/Sources/SettingsView.swift
-git diff --cached --quiet || git commit -m "Release ${TAG}: version sync"
-git push
 
 # --- Update Homebrew tap repo ---
 echo "==> Updating Homebrew tap (${TAP_REPO})..."
